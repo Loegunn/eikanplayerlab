@@ -1,0 +1,25 @@
+{
+  "name": "栄冠球員簿 Player Lab",
+  "short_name": "栄冠球員簿",
+  "description": "栄冠ナイン球員影相錄入、更新、特能及成長歷史工具。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#f3efe6",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

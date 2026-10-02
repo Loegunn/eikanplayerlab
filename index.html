@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3efe6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="栄冠球員簿">
+<title>栄冠球員簿 Player Lab</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#f5f1e8;--paper:#fffdf8;--ink:#263238;--muted:#6d777b;
+  --line:#d9d1c3;--accent:#315d55;--accent2:#e6f0ec;--warn:#fff4dd;--bad:#ffe8e4;
+  --r:14px
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC",sans-serif}
+header{position:sticky;top:0;z-index:20;background:rgba(245,241,232,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header .inner{max-width:980px;margin:auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.brand{font-weight:900}.brand small{display:block;color:var(--muted);font-size:11px;font-weight:700}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button,.btn,.btn2{
+ border:0;border-radius:999px;padding:8px 12px;font:inherit;font-weight:800;cursor:pointer
+}
+nav button{background:transparent;color:var(--muted)}
+nav button.active,.btn{background:var(--accent);color:white}
+.btn2{background:var(--accent2);color:var(--accent)}
+main{max-width:980px;margin:auto;padding:18px 16px 90px}
+.view{display:none}.view.active{display:block}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:12px 0}
+.hero{padding:18px}.hero h1{margin:0 0 6px;font-size:27px}.hero p{margin:0;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.statgrid{display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:8px}
+label{font-size:12px;font-weight:800;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:white;font:inherit;color:var(--ink)}
+textarea{min-height:105px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.preview{display:none;max-width:100%;max-height:420px;object-fit:contain;border:1px solid var(--line);border-radius:12px;background:white}
+.preview.show{display:block}
+.status{padding:10px 12px;border-radius:10px;background:#f8f7f3;color:var(--muted);font-size:13px}
+.skillbox{display:flex;gap:6px;flex-wrap:wrap;min-height:42px;padding:8px;border:1px solid var(--line);border-radius:10px;background:white}
+.chip{display:inline-flex;gap:5px;align-items:center;background:var(--accent2);color:var(--accent);padding:5px 8px;border-radius:999px;font-size:12px;font-weight:800}
+.chip button{border:0;background:none;color:inherit;cursor:pointer}
+.player{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.player h3{margin:0 0 5px}.meta{color:var(--muted);font-size:13px}
+.kpis{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.kpi{background:#f7f5ef;border-radius:8px;padding:5px 7px;font-size:12px}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.diff .plus{background:#eef8f1;border:1px solid #cfe5d4;border-radius:10px;padding:10px}
+.diff .minus{background:#fff0ed;border:1px solid #f0cfc8;border-radius:10px;padding:10px}
+.history-item{border-left:3px solid var(--accent);padding-left:10px;margin:12px 0}
+.history-item b{display:block}
+.empty{color:var(--muted);text-align:center;padding:24px}
+.notice{background:var(--warn);border:1px solid #ecd49e;border-radius:12px;padding:11px 12px;font-size:13px}
+.bad{background:var(--bad)}
+details{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:var(--paper)}
+summary{cursor:pointer;padding:11px 13px;font-weight:900}
+details>div{padding:0 13px 13px}
+.bottom{display:none}
+@media(max-width:720px){
+  header nav{display:none}.statgrid{grid-template-columns:1fr 1fr}.diff{grid-template-columns:1fr}
+  body{padding-bottom:68px}
+  .bottom{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:30;grid-template-columns:repeat(4,1fr);background:rgba(255,253,248,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+  .bottom button{border:0;background:none;padding:7px 2px;font:inherit;font-size:11px;font-weight:800;color:var(--muted)}
+  .bottom button.active{color:var(--accent)}
+}
+</style>
+</head>
+<body>
+<header><div class="inner">
+<div class="brand">栄冠球員簿 <small>Player Lab · 獨立於攻略站</small></div>
+<nav>
+<button data-go="home" class="active">首頁</button>
+<button data-go="players">球員</button>
+<button data-go="scan">影相更新</button>
+<button data-go="data">資料</button>
+</nav>
+</div></header>
+
+<main>
+<section class="view active" id="v-home">
+  <div class="card hero">
+    <h1>同一個球員，影幾多次都得。</h1>
+    <p>第一次建立球員；之後再影相，會先找同名／相近球員，再顯示能力與特能差異，確認後先更新。</p>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>📷 影相更新</h3><p class="meta">讀能力值、A～G 特、青特／赤特等，再由你核對。</p><button class="btn" data-go="scan">開始影相</button></div>
+    <div class="card"><h3>📈 成長歷史</h3><p class="meta">每次確認都保留 timestamp，不再只得「1年／2年／3年」一個數值。</p><button class="btn2" data-go="players">睇球員</button></div>
+    <div class="card"><h3>🧳 同舊站分開</h3><p class="meta">呢個 App 用自己嘅儲存空間；需要時先由舊攻略站匯入。</p><button class="btn2" data-go="data">資料管理</button></div>
+  </div>
+</section>
+
+<section class="view" id="v-players">
+  <div class="card">
+    <h2>球員簿</h2>
+    <input id="player-search" type="search" placeholder="搜尋姓名／守位／特能">
+  </div>
+  <div id="player-list"></div>
+</section>
+
+<section class="view" id="v-scan">
+  <div class="card">
+    <h2>圖片導入／更新球員</h2>
+    <p class="meta">最佳流程：影球員能力畫面 → OCR → 自動解析 → 選擇「新增」或「更新現有球員」→ 確認差異。</p>
+    <div class="actions">
+      <label class="btn" style="cursor:pointer">選擇／拍照<input id="scan-image" type="file" accept="image/*" capture="environment" hidden></label>
+      <button class="btn2" id="scan-recognize">識別圖片</button>
+      <button class="btn2" id="scan-demo">示範更新</button>
+      <button class="btn2" id="scan-reset">清空</button>
+    </div>
+    <img id="scan-preview" class="preview" alt="圖片預覽">
+    <div id="scan-status" class="status">未選擇圖片。</div>
+
+    <details><summary>OCR 原始文字</summary><div>
+      <textarea id="scan-raw" placeholder="可以貼其他 OCR 結果，再撳重新解析"></textarea>
+      <div class="actions"><button class="btn2" id="scan-parse">重新解析</button></div>
+    </div></details>
+  </div>
+
+  <div class="card">
+    <h3>確認資料</h3>
+    <div class="statgrid">
+      <label>姓名<input id="f-name"></label>
+      <label>年級<select id="f-year"><option value="1">1年</option><option value="2">2年</option><option value="3">3年</option></select></label>
+      <label>守位<select id="f-pos"><option>投手</option><option>捕手</option><option>一壘手</option><option>二壘手</option><option>三壘手</option><option>游擊手</option><option>左外野</option><option>中外野</option><option>右外野</option></select></label>
+      <label>投打<input id="f-bt" placeholder="右投右打"></label>
+      <label>彈道<input id="f-traj" inputmode="numeric"></label>
+      <label>ミート<input id="f-meet" inputmode="numeric"></label>
+      <label>パワー<input id="f-power" inputmode="numeric"></label>
+      <label>走力<input id="f-speed" inputmode="numeric"></label>
+      <label>肩力<input id="f-arm" inputmode="numeric"></label>
+      <label>守備力<input id="f-field" inputmode="numeric"></label>
+      <label>捕球<input id="f-catch" inputmode="numeric"></label>
+      <label>球速<input id="f-velocity" inputmode="numeric"></label>
+      <label>コントロール<input id="f-control" inputmode="numeric"></label>
+      <label>スタミナ<input id="f-stamina" inputmode="numeric"></label>
+      <label>球種數<input id="f-pitches" inputmode="numeric"></label>
+      <label>總變化量<input id="f-breaks" inputmode="numeric"></label>
+      <label>キャッチャー<select id="f-catcher"><option>未確認</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+      <label>送球<select id="f-throw"><option>未確認</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option></select></label>
+    </div>
+    <p class="meta" style="margin-top:10px">已識別特能</p>
+    <div id="skill-box" class="skillbox"><span class="meta">未識別到特能</span></div>
+    <label style="margin-top:10px">手動補充特能<input id="f-extra" placeholder="広角打法, 初球○"></label>
+  </div>
+
+  <div class="card">
+    <h3>同一球員判斷</h3>
+    <div id="match-box" class="status">輸入姓名之後會搜尋現有球員。</div>
+    <div id="diff-box" style="margin-top:10px"></div>
+    <div class="actions">
+      <button class="btn" id="save-update">確認儲存</button>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-data">
+  <div class="card">
+    <h2>資料管理</h2>
+    <p class="meta">Player Lab 使用 <code>eikan-player-lab-v1</code>，同舊攻略站 <code>eikan-helper-v2</code> 分開。</p>
+    <div class="actions">
+      <button class="btn" id="import-legacy">由舊攻略站匯入</button>
+      <button class="btn2" id="export-data">匯出 Player Lab JSON</button>
+      <label class="btn2" style="cursor:pointer">匯入 Player Lab JSON<input id="import-json" type="file" accept="application/json" hidden></label>
+    </div>
+    <div id="data-status" class="status">未進行資料操作。</div>
+  </div>
+  <div class="notice"><b>獨立網頁建議：</b>可以將呢個資料夾放去另一個 GitHub repo／另一個 Pages path，例如 <code>/eikan-player-lab/</code>，同原本 <code>/eikan9/</code> 分開。</div>
+</section>
+</main>
+
+<nav class="bottom">
+<button data-go="home" class="active">首頁</button>
+<button data-go="players">球員</button>
+<button data-go="scan">影相</button>
+<button data-go="data">資料</button>
+</nav>
+
+<script>
+const STORE='eikan-player-lab-v1';
+let db=load();
+let detectedSkills=[];
+let matchedId=null;
+
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(STORE)||'null');
+    if(d&&Array.isArray(d.players))return d;
+  }catch(e){}
+  return {version:1,players:[]};
+}
+function save(){localStorage.setItem(STORE,JSON.stringify(db));}
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function go(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='v-'+id));
+  document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+  if(id==='players')renderPlayers();
+  window.scrollTo(0,0);
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-go]');
+  if(b)go(b.dataset.go);
+});
+
+function normName(s){
+  return String(s||'').trim().replace(/\s+/g,'').replace(/[齊斎齋]/g,'斉').replace(/﨑/g,'崎');
+}
+function levenshtein(a,b){
+  a=normName(a);b=normName(b);
+  const m=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++)m[i][0]=i;
+  for(let j=0;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)
+    m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return m[a.length][b.length];
+}
+function findMatches(name){
+  const n=normName(name);
+  if(!n)return [];
+  return db.players.map(p=>{
+    const pn=normName(p.name);
+    let score=0;
+    if(pn===n)score=100;
+    else{
+      const d=levenshtein(pn,n),max=Math.max(pn.length,n.length)||1;
+      score=Math.round((1-d/max)*100);
+    }
+    return {p,score};
+  }).filter(x=>x.score>=60).sort((a,b)=>b.score-a.score);
+}
+function latest(p){return p.history?.[p.history.length-1]||null;}
+function snapStatsText(s){
+  if(!s)return '';
+  const a=[];
+  if(s.pos==='投手'){
+    if(s.velocity)a.push(s.velocity+'km');
+    if(s.control)a.push('控'+s.control);
+    if(s.stamina)a.push('耐'+s.stamina);
+    if(s.breaks)a.push('變'+s.breaks);
+  }else{
+    if(s.meet)a.push('ミ'+s.meet);
+    if(s.power)a.push('パ'+s.power);
+    if(s.speed)a.push('走'+s.speed);
+    if(s.arm)a.push('肩'+s.arm);
+    if(s.field)a.push('守'+s.field);
+    if(s.catch)a.push('捕'+s.catch);
+  }
+  return a.join(' · ');
+}
+function renderPlayers(){
+  const q=(document.getElementById('player-search')?.value||'').toLowerCase();
+  const box=document.getElementById('player-list');
+  let rows=db.players.filter(p=>{
+    const l=latest(p);
+    return !q || [p.name,l?.pos,(l?.skills||[]).join(' ')].join(' ').toLowerCase().includes(q);
+  });
+  if(!rows.length){box.innerHTML='<div class="empty">未有球員資料。</div>';return;}
+  box.innerHTML=rows.map(p=>{
+    const l=latest(p),h=p.history||[];
+    return '<div class="card player"><div><h3>'+esc(p.name)+'</h3>'+
+      '<div class="meta">'+esc((l?.year||'?')+'年 · '+(l?.pos||''))+' · 已記錄 '+h.length+' 次</div>'+
+      '<div class="kpis">'+(snapStatsText(l).split(' · ').filter(Boolean).map(x=>'<span class="kpi">'+esc(x)+'</span>').join(''))+'</div>'+
+      ((l?.skills||[]).length?'<div class="kpis">'+l.skills.map(x=>'<span class="chip">'+esc(x)+'</span>').join('')+'</div>':'')+
+      '<details><summary>成長歷史</summary><div>'+h.slice().reverse().map((s,i)=>{
+        const prev=h[h.length-2-i];
+        const ds=diffSnapshots(prev,s);
+        return '<div class="history-item"><b>'+esc(new Date(s.ts).toLocaleString())+' · '+esc(s.year+'年')+'</b>'+
+          '<div class="meta">'+esc(snapStatsText(s))+'</div>'+
+          (ds.summary?'<div class="meta">'+esc(ds.summary)+'</div>':'')+
+          ((s.skills||[]).length?'<div class="kpis">'+s.skills.map(x=>'<span class="chip">'+esc(x)+'</span>').join('')+'</div>':'')+
+        '</div>';
+      }).join('')+'</div></details>'+
+      '</div><div><button class="btn2" data-edit="'+esc(p.id)+'">再影一次</button></div></div>';
+  }).join('');
+}
+document.getElementById('player-search')?.addEventListener('input',renderPlayers);
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-edit]');
+  if(!b)return;
+  const p=db.players.find(x=>x.id===b.dataset.edit);
+  if(!p)return;
+  matchedId=p.id;
+  fset('name',p.name);
+  const l=latest(p);
+  if(l){fillForm(l);renderDiffPreview();}
+  go('scan');
+});
+
+function field(k){return document.getElementById('f-'+k)}
+function fval(k){return field(k)?.value?.trim?.()??''}
+function fset(k,v){if(field(k)&&v!==undefined&&v!==null)field(k).value=String(v)}
+function resetScan(){
+  ['name','bt','traj','meet','power','speed','arm','field','catch','velocity','control','stamina','pitches','breaks','extra'].forEach(k=>{if(field(k))field(k).value=''});
+  fset('year',1);fset('pos','投手');fset('catcher','未確認');fset('throw','未確認');
+  detectedSkills=[];matchedId=null;renderSkills();renderMatch();
+  const raw=document.getElementById('scan-raw');if(raw)raw.value='';
+  const img=document.getElementById('scan-preview');if(img){img.removeAttribute('src');img.classList.remove('show')}
+  document.getElementById('scan-status').textContent='已清空。';
+}
+document.getElementById('scan-reset').addEventListener('click',resetScan);
+
+function renderSkills(){
+  const box=document.getElementById('skill-box');
+  box.innerHTML=detectedSkills.length?detectedSkills.map((s,i)=>'<span class="chip">'+esc(s)+'<button data-rmskill="'+i+'">×</button></span>').join(''):'<span class="meta">未識別到特能</span>';
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-rmskill]');
+  if(!b)return;detectedSkills.splice(Number(b.dataset.rmskill),1);renderSkills();renderDiffPreview();
+});
+
+function currentSnapshot(){
+  const extras=(fval('extra')||'').split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean);
+  return {
+    ts:Date.now(),year:Number(fval('year')||1),pos:fval('pos'),bt:fval('bt'),
+    traj:num('traj'),meet:num('meet'),power:num('power'),speed:num('speed'),arm:num('arm'),field:num('field'),catch:num('catch'),
+    velocity:num('velocity'),control:num('control'),stamina:num('stamina'),pitches:num('pitches'),breaks:num('breaks'),
+    catcher:fval('catcher'),throw:fval('throw'),skills:[...new Set([...detectedSkills,...extras])]
+  };
+}
+function num(k){const v=Number(fval(k));return Number.isFinite(v)&&fval(k)!==''?v:''}
+function fillForm(s){
+  ['year','pos','bt','traj','meet','power','speed','arm','field','catch','velocity','control','stamina','pitches','breaks','catcher','throw'].forEach(k=>fset(k,s[k]??''));
+  detectedSkills=[...(s.skills||[])];renderSkills();
+}
+function diffSnapshots(a,b){
+  if(!a)return {changes:[],added:b?.skills||[],removed:[],summary:'首次記錄'};
+  const labels={traj:'彈道',meet:'ミート',power:'パワー',speed:'走力',arm:'肩力',field:'守備',catch:'捕球',velocity:'球速',control:'控球',stamina:'スタミナ',pitches:'球種數',breaks:'總變化量',catcher:'キャッチャー',throw:'送球'};
+  const changes=[];
+  Object.keys(labels).forEach(k=>{
+    if(String(a[k]??'')!==String(b[k]??'') && (a[k]!==''||b[k]!==''))changes.push(labels[k]+' '+(a[k]??'—')+' → '+(b[k]??'—'));
+  });
+  const as=new Set(a.skills||[]),bs=new Set(b.skills||[]);
+  const added=[...bs].filter(x=>!as.has(x)),removed=[...as].filter(x=>!bs.has(x));
+  const summary=[...changes,added.length?'新增特能：'+added.join('、'):'',removed.length?'未識別／移除：'+removed.join('、'):''].filter(Boolean).join('；');
+  return {changes,added,removed,summary};
+}
+function renderMatch(){
+  const name=fval('name');
+  const box=document.getElementById('match-box');
+  const matches=findMatches(name);
+  if(matchedId){
+    const p=db.players.find(x=>x.id===matchedId);
+    box.innerHTML='<b>將更新：</b> '+esc(p?.name||name)+' <button class="btn2" id="switch-new" type="button">改為新增</button>';
+    return;
+  }
+  if(!name){box.textContent='輸入姓名之後會搜尋現有球員。';return;}
+  if(!matches.length){box.innerHTML='<b>未搵到同名球員。</b> 儲存時會新增「'+esc(name)+'」。';return;}
+  const top=matches[0];
+  box.innerHTML='<b>可能係現有球員：</b> '+esc(top.p.name)+'（相似度 '+top.score+'%） '+
+    '<button class="btn2" type="button" data-use-match="'+esc(top.p.id)+'">更新呢個</button> '+
+    '<button class="btn2" type="button" id="keep-new">當新球員</button>';
+}
+function renderDiffPreview(){
+  renderMatch();
+  const box=document.getElementById('diff-box');
+  if(!matchedId){box.innerHTML='';return;}
+  const p=db.players.find(x=>x.id===matchedId),a=latest(p),b=currentSnapshot(),d=diffSnapshots(a,b);
+  box.innerHTML='<div class="diff"><div class="plus"><b>今次變化</b><div class="meta">'+esc(d.changes.join('；')||'能力值未變')+
+    '</div>'+(d.added.length?'<div class="kpis">'+d.added.map(x=>'<span class="chip">＋'+esc(x)+'</span>').join('')+'</div>':'')+
+    '</div><div class="minus"><b>未識別／移除</b><div class="meta">'+esc(d.removed.join('、')||'無')+'</div></div></div>';
+}
+document.getElementById('v-scan').addEventListener('input',e=>{if(e.target.id==='f-name')matchedId=null;renderDiffPreview()});
+document.addEventListener('click',e=>{
+  const u=e.target.closest('[data-use-match]');
+  if(u){matchedId=u.dataset.useMatch;renderDiffPreview();}
+  if(e.target.id==='keep-new'||e.target.id==='switch-new'){matchedId=null;renderDiffPreview();}
+});
+
+function knownSkills(){
+  return ['広角打法','初球○','内野安打○','守備職人','流し打ち','対変化球○','選球眼','ムードメーカー','三振','併殺','ムード×',
+  'アベレージヒッター','パワーヒッター','プルヒッター','ラインドライブ','レーザービーム','低め○','キレ○','奪三振','逃げ球','内角攻め','リリース○','勝ち運','闘志'];
+}
+function extractNum(txt,regs,min=0,max=999){for(const r of regs){const m=txt.match(r);if(m){const n=Number(m[1]);if(n>=min&&n<=max)return n}}return ''}
+function parseText(raw){
+  const t=(raw||'').replace(/[ＯO]/g,'0').replace(/[ＩIｌ]/g,'1');
+  fset('traj',extractNum(t,[/弾道\s*[:：]?\s*(\d)/,/彈道\s*[:：]?\s*(\d)/],1,4));
+  fset('meet',extractNum(t,[/ミート\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('power',extractNum(t,[/パワー\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('speed',extractNum(t,[/走力\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('arm',extractNum(t,[/肩力\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('field',extractNum(t,[/守備力\s*[:：]?\s*(\d{1,3})/,/守備\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('catch',extractNum(t,[/捕球\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('velocity',extractNum(t,[/球速\s*[:：]?\s*(\d{3})/,/(\d{3})\s*km\/?h/i],100,180));
+  fset('control',extractNum(t,[/コントロール\s*[:：]?\s*(\d{1,3})/],1,100));
+  fset('stamina',extractNum(t,[/スタミナ\s*[:：]?\s*(\d{1,3})/],1,100));
+  const y=t.match(/([123])\s*年/);if(y)fset('year',y[1]);
+  [['投手','投手'],['捕手','捕手'],['一塁手','一壘手'],['二塁手','二壘手'],['三塁手','三壘手'],['遊撃手','游擊手'],['左翼手','左外野'],['中堅手','中外野'],['右翼手','右外野']].some(([n,v])=>{if(t.includes(n)){fset('pos',v);return true}});
+  const cg=t.match(/キャッチャー\s*([A-G])/i);if(cg)fset('catcher',cg[1].toUpperCase());
+  const sg=t.match(/送球\s*([A-G])/i);if(sg)fset('throw',sg[1].toUpperCase());
+  const gradeNames=['キャッチャー','送球','盗塁','走塁','チャンス','対左投手','対左打者','対ピンチ','ノビ','回復','ケガしにくさ'];
+  const skills=knownSkills().filter(s=>t.includes(s));
+  gradeNames.forEach(n=>{const m=t.match(new RegExp(n+'\\s*([A-G])','i'));if(m)skills.push(n+m[1].toUpperCase())});
+  detectedSkills=[...new Set(skills)];renderSkills();renderDiffPreview();
+  document.getElementById('scan-status').textContent='已解析文字。請核對姓名、能力值同特能。';
+}
+document.getElementById('scan-image').addEventListener('change',e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  const img=document.getElementById('scan-preview');img.src=URL.createObjectURL(f);img.classList.add('show');
+  document.getElementById('scan-status').textContent='已載入圖片。撳「識別圖片」。';
+});
+document.getElementById('scan-recognize').addEventListener('click',async()=>{
+  const img=document.getElementById('scan-preview'),st=document.getElementById('scan-status');
+  if(!img.src){st.textContent='請先選擇圖片。';return}
+  if(!('TextDetector'in window)){st.innerHTML='<b>瀏覽器冇本機 TextDetector。</b> 可以用其他 OCR 後將文字貼入下面。';return}
+  try{
+    st.textContent='正在本機識別…';
+    const blocks=await (new TextDetector()).detect(img);
+    const txt=blocks.map(x=>x.rawValue||'').join('\n');
+    document.getElementById('scan-raw').value=txt;parseText(txt);
+  }catch(err){st.textContent='識別失敗：'+(err?.message||err)}
+});
+document.getElementById('scan-parse').addEventListener('click',()=>parseText(document.getElementById('scan-raw').value));
+document.getElementById('scan-demo').addEventListener('click',()=>{
+  resetScan();fset('name','立原');fset('year',3);fset('pos','中外野');fset('bt','右投右打');
+  fset('traj',2);fset('meet',78);fset('power',55);fset('speed',71);fset('arm',46);fset('field',56);fset('catch',66);
+  detectedSkills=['初球○'];renderSkills();renderDiffPreview();document.getElementById('scan-status').textContent='已填入示範「再次拍攝立原」資料。';
+});
+
+document.getElementById('save-update').addEventListener('click',()=>{
+  const name=fval('name');if(!name){alert('請先確認姓名');return}
+  const snap=currentSnapshot();
+  let p=matchedId?db.players.find(x=>x.id===matchedId):null;
+  if(!p){
+    const exact=db.players.find(x=>normName(x.name)===normName(name));
+    if(exact&&!confirm('已有同名球員「'+exact.name+'」。要當新球員另外建立嗎？')){p=exact}
+  }
+  if(p){
+    const d=diffSnapshots(latest(p),snap);
+    if(!confirm('更新 '+p.name+'？\n\n'+(d.summary||'能力值冇變'))){return}
+    p.name=name;p.history=p.history||[];p.history.push(snap);
+  }else{
+    p={id:'pl'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,history:[snap]};
+    db.players.push(p);
+  }
+  save();alert('已儲存：'+name+'（目前共 '+p.history.length+' 次記錄）');renderPlayers();go('players');
+});
+
+document.getElementById('import-legacy').addEventListener('click',()=>{
+  let old;try{old=JSON.parse(localStorage.getItem('eikan-helper-v2')||'null')}catch(e){}
+  if(!old||!Array.isArray(old.roster)){document.getElementById('data-status').textContent='呢個瀏覽器搵唔到舊攻略站球隊資料。';return}
+  let n=0;
+  old.roster.forEach(x=>{
+    let p=db.players.find(y=>normName(y.name)===normName(x.name));
+    if(!p){p={id:'pl'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:x.name,history:[]};db.players.push(p)}
+    const s=x.snaps?.[String(x.yr)]||x.snaps?.[x.yr]||{};
+    const skills=[...(x.spo||[])];
+    if(x.catcher&&x.catcher!=='未確認')skills.push('キャッチャー'+x.catcher);
+    if(x.throw&&x.throw!=='未確認')skills.push('送球'+x.throw);
+    Object.entries(x.spg||{}).forEach(([k,v])=>skills.push(k+v));
+    p.history.push({ts:Date.now(),year:x.yr,pos:x.pos,bt:x.bt,catcher:x.catcher,throw:x.throw,skills:[...new Set(skills)],...s});
+    n++;
+  });
+  save();document.getElementById('data-status').textContent='已由舊攻略站匯入 '+n+' 位／筆現役球員資料。';
+});
+document.getElementById('export-data').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eikan-player-lab-backup.json';a.click();URL.revokeObjectURL(a.href);
+});
+document.getElementById('import-json').addEventListener('change',async e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!d||!Array.isArray(d.players))throw new Error('格式不符');
+    db=d;save();document.getElementById('data-status').textContent='已匯入 '+db.players.length+' 位球員。';
+  }catch(err){document.getElementById('data-status').textContent='匯入失敗：'+err.message}
+});
+renderPlayers();
+if('serviceWorker'in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>

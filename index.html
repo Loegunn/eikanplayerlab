@@ -65,6 +65,14 @@ details>div{padding:0 13px 13px}
   .bottom button{border:0;background:none;padding:7px 2px;font:inherit;font-size:11px;font-weight:800;color:var(--muted)}
   .bottom button.active{color:var(--accent)}
 }
+
+.paste-zone{
+  border:2px dashed var(--line);border-radius:12px;padding:14px;text-align:center;
+  color:var(--muted);background:#faf8f3;margin:10px 0;transition:.15s ease
+}
+.paste-zone.drag{border-color:var(--accent);background:var(--accent2);color:var(--accent)}
+.paste-zone b{color:var(--ink)}
+
 </style>
 </head>
 <body>
@@ -82,7 +90,7 @@ details>div{padding:0 13px 13px}
 <section class="view active" id="v-home">
   <div class="card hero">
     <h1>同一個球員，影幾多次都得。</h1>
-    <p>第一次建立球員；之後再影相，會先找同名／相近球員，再顯示能力與特能差異，確認後先更新。</p>
+    <p>第一次建立球員；之後再影相或直接 ⌘V 貼圖，會先找同名／相近球員，再顯示能力與特能差異，確認後先更新。</p>
   </div>
   <div class="grid">
     <div class="card"><h3>📷 影相更新</h3><p class="meta">讀能力值、A～G 特、青特／赤特等，再由你核對。</p><button class="btn" data-go="scan">開始影相</button></div>
@@ -108,6 +116,11 @@ details>div{padding:0 13px 13px}
       <button class="btn2" id="scan-recognize">識別圖片</button>
       <button class="btn2" id="scan-demo">示範更新</button>
       <button class="btn2" id="scan-reset">清空</button>
+    </div>
+
+    <div id="paste-zone" class="paste-zone" tabindex="0">
+      <b>Mac：直接 ⌘V 貼上圖片</b><br>
+      亦可以將圖片拖入呢個區域，唔使先另存檔。
     </div>
     <img id="scan-preview" class="preview" alt="圖片預覽">
     <div id="scan-status" class="status">未選擇圖片。</div>
@@ -398,6 +411,45 @@ document.getElementById('scan-image').addEventListener('change',e=>{
   const f=e.target.files?.[0];if(!f)return;
   const img=document.getElementById('scan-preview');img.src=URL.createObjectURL(f);img.classList.add('show');
   document.getElementById('scan-status').textContent='已載入圖片。撳「識別圖片」。';
+});
+
+function loadImageBlob(blob, sourceLabel='剪貼簿'){
+  if(!blob || !blob.type?.startsWith('image/'))return false;
+  const img=document.getElementById('scan-preview');
+  const old=img.dataset.objectUrl;
+  if(old)URL.revokeObjectURL(old);
+  const url=URL.createObjectURL(blob);
+  img.dataset.objectUrl=url;
+  img.src=url;
+  img.classList.add('show');
+  document.getElementById('scan-status').textContent='已由'+sourceLabel+'載入圖片。撳「識別圖片」。';
+  go('scan');
+  return true;
+}
+
+// Mac / desktop: ⌘V / Ctrl+V paste image directly
+document.addEventListener('paste',e=>{
+  const items=[...(e.clipboardData?.items||[])];
+  const imgItem=items.find(x=>x.type?.startsWith('image/'));
+  if(!imgItem)return;
+  const blob=imgItem.getAsFile();
+  if(blob){
+    e.preventDefault();
+    loadImageBlob(blob,'剪貼簿');
+  }
+});
+
+// Drag & drop image
+const pasteZone=document.getElementById('paste-zone');
+['dragenter','dragover'].forEach(type=>pasteZone?.addEventListener(type,e=>{
+  e.preventDefault();pasteZone.classList.add('drag');
+}));
+['dragleave','drop'].forEach(type=>pasteZone?.addEventListener(type,e=>{
+  e.preventDefault();pasteZone.classList.remove('drag');
+}));
+pasteZone?.addEventListener('drop',e=>{
+  const f=[...(e.dataTransfer?.files||[])].find(x=>x.type?.startsWith('image/'));
+  if(f)loadImageBlob(f,'拖放');
 });
 document.getElementById('scan-recognize').addEventListener('click',async()=>{
   const img=document.getElementById('scan-preview'),st=document.getElementById('scan-status');
